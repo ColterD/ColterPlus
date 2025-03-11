@@ -35,7 +35,8 @@ export default defineConfig({
   },
   themeConfig: {
     nav: [
-      { text: 'Blog', link: '/blog' },
+      { text: 'Blog', link: '/blog/' },
+      { text: 'Projects', link: '/projects/' },
       {
         text: 'Guides',
         items: [
@@ -46,6 +47,29 @@ export default defineConfig({
       },
       { text: 'Changelog', link: 'https://github.com/...' },
     ],
+    sidebar: {
+      '/projects/': [
+        {
+          text: 'Projects',
+          link: '/projects/',
+          items: []  // Will be populated as you create projects
+        }
+      ],
+      '/blog/': [
+        {
+          text: 'Blog',
+          link: '/blog/',
+          items: []  // You can populate this if you want categories
+        }
+      ],
+      '/guides/': [
+        {
+          text: 'Guides',
+          link: '/guides/',
+          items: []  // Populate with your guide categories
+        }
+      ]
+    },
     search: {
       provider: 'local',
       options: {

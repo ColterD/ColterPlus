@@ -5,7 +5,8 @@
     "docs:build": "vitepress build docs/",
     "docs:dev": "vitepress dev docs/",
     "docs:preview": "vitepress preview docs/",
-    "format": "prettier -w --cache --check ."
+    "format": "prettier -w --cache --check .",
+    "create": "node scripts/create-content.js"
   },
   "dependencies": {
     "@vueuse/core": "^13.0.0",
