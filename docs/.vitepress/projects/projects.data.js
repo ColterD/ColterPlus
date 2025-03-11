@@ -1,6 +1,4 @@
-// docs/projects/projects.data.js
 import { createContentLoader } from 'vitepress'
-import path from 'path'
 
 export default createContentLoader('projects/*/index.md', {
   transform(rawData) {
