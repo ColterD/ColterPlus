@@ -2,6 +2,7 @@
 import { h } from 'vue';
 import type { Theme } from 'vitepress';
 import DefaultTheme from 'vitepress/theme';
+import HomeStatus from './components/HomeStatus.vue';  // This path is correct
 import './style.css';
 
 export default {
@@ -12,6 +13,7 @@ export default {
     });
   },
   enhanceApp({ app, router, siteData }) {
-    // ...
+    // Register the HomeStatus component globally
+    app.component('HomeStatus', HomeStatus);
   },
 } satisfies Theme;

@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+      "target": "esnext",
+      "module": "esnext",
+      "moduleResolution": "node",
+      "strict": true,
+      "jsx": "preserve",
+      "sourceMap": true,
+      "resolveJsonModule": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "lib": ["esnext", "dom"],
+      // Remove the vite/client type reference that's causing issues
+      "types": []
+    },
+    "include": [
+      "docs/.vitepress/**/*.ts",
+      "docs/.vitepress/**/*.d.ts",
+      "docs/.vitepress/**/*.tsx",
+      "docs/.vitepress/**/*.vue",
+      "docs/.vitepress/types/**/*.ts"
+    ]
+  }
