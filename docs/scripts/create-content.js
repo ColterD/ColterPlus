@@ -5,7 +5,7 @@ import readline from 'readline';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const templatesDir = path.join(__dirname, '../../templates');
+const templatesDir = path.join(__dirname, '../templates');
 const contentDirs = {
   blog: path.join(__dirname, '../blog'),
   project: path.join(__dirname, '../projects'),
@@ -485,7 +485,7 @@ async function main() {
     return;
   }
 
-  console.log('=== ColterPlus Content Generator ===');
+  console.log('=== VitePress Content Generator ===');
   console.log('1. Create Blog Post');
   console.log('2. Create Project');
   console.log('3. Create Project Update');
