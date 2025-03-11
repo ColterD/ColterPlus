@@ -34,7 +34,7 @@ Posted on {{DATE}}
 
 ## Screenshots / Media
 
-![Description](/projects/{{PROJECT_SLUG}}/assets/update-{{UPDATE_NUMBER}}.png)
+![Description](../assets/update-{{UPDATE_NUMBER}}.png)
 
 ## Next Steps
 

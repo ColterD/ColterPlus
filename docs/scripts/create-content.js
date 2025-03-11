@@ -5,7 +5,7 @@ import readline from 'readline';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const templatesDir = path.join(__dirname, '../templates');
+const templatesDir = path.join(__dirname, '../../templates');
 const contentDirs = {
   blog: path.join(__dirname, '../blog'),
   project: path.join(__dirname, '../projects'),

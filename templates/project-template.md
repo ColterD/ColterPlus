@@ -8,7 +8,7 @@ tags: ["{{TAG1}}", "{{TAG2}}"]
 
 # {{PROJECT_TITLE}}
 
-![Project Banner](/projects/{{PROJECT_SLUG}}/banner.png)
+![Project Banner](./assets/banner.png)
 
 ## Project Overview
 
