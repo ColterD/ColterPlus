@@ -8,21 +8,22 @@
     "format": "prettier -w --cache --check ."
   },
   "dependencies": {
+    "@vueuse/core": "^13.0.0",
     "feed": "^4.2.2",
     "nprogress": "^0.2.0",
-    "unocss": "^65.4.3",
+    "unocss": "^65.5.0",
     "vitepress": "^1.6.3",
     "vue": "^3.5.13",
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "^22.13.1",
-    "eslint": "^9.20.1",
-    "prettier": "^3.5.0",
-    "sass": "^1.84.0",
-    "stylelint": "^16.14.1",
-    "typescript": "^5.7.3",
-    "unplugin-auto-import": "^19.0.0",
+    "@types/node": "^22.13.10",
+    "eslint": "^9.22.0",
+    "prettier": "^3.5.3",
+    "sass": "^1.85.1",
+    "stylelint": "^16.15.0",
+    "typescript": "^5.8.2",
+    "unplugin-auto-import": "^19.1.1",
     "vite-plugin-terminal": "^1.2.0"
   },
   "prettier": {
