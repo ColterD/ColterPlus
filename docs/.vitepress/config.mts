@@ -1,8 +1,8 @@
 import UnoCSS from 'unocss/vite';
 import AutoImport from 'unplugin-auto-import/vite';
-import OptimizeExclude from 'vite-plugin-optimize-exclude';
 import { defineConfig } from 'vitepress';
 import { execSync } from 'child_process';
+import unocssConfig from './unocss.config';
 
 const getGitRevision = () => {
   try {
@@ -69,7 +69,20 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/colterd/colterplus' },
       { icon: 'discord', link: 'https://discord.gg/colterplus' },
     ],
-    /* temp comment out so I can redo file structure later
-     footer: footerConfig, */
+    footer: footerConfig,
   },
+  vite: {
+    plugins: [
+      UnoCSS(unocssConfig),
+      AutoImport({
+        // Auto import configs
+        imports: ['vue', '@vueuse/core'],
+        dts: true,
+      }),
+      // OptimizeExclude plugin removed due to compatibility issues
+    ],
+    ssr: {
+      noExternal: ['nprogress']
+    }
+  }
 });

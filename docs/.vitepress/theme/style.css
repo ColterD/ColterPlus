@@ -6,25 +6,25 @@
 
   /* Colors: Custom Block */
   /** Info */
-  --vp-custom-block-info-bg: theme('colors.swarm.950');
-  --vp-custom-block-info-border: theme('colors.swarm.800');
-  --vp-custom-block-info-text: theme('colors.swarm.200');
-  --vp-custom-block-info-text-deep: theme('colors.swarm.200');
+  --vp-custom-block-info-bg: rgb(7, 13, 24);
+  --vp-custom-block-info-border: rgb(26, 44, 77);
+  --vp-custom-block-info-text: rgb(188, 213, 255);
+  --vp-custom-block-info-text-deep: rgb(188, 213, 255);
   /** Tip */
-  --vp-custom-block-tip-bg: theme('colors.meadow.950');
-  --vp-custom-block-tip-border: theme('colors.meadow.800');
-  --vp-custom-block-tip-text: theme('colors.meadow.200');
-  --vp-custom-block-tip-text-deep: theme('colors.meadow.200');
+  --vp-custom-block-tip-bg: rgb(5, 24, 12);
+  --vp-custom-block-tip-border: rgb(25, 77, 51);
+  --vp-custom-block-tip-text: rgb(152, 245, 200);
+  --vp-custom-block-tip-text-deep: rgb(152, 245, 200);
   /** Warning */
-  --vp-custom-block-warning-bg: theme('colors.merlin.950');
-  --vp-custom-block-warning-border: theme('colors.merlin.800');
-  --vp-custom-block-warning-text: theme('colors.merlin.200');
-  --vp-custom-block-warning-text-deep: theme('colors.merlin.200');
+  --vp-custom-block-warning-bg: rgb(24, 18, 5);
+  --vp-custom-block-warning-border: rgb(77, 58, 25);
+  --vp-custom-block-warning-text: rgb(245, 211, 152);
+  --vp-custom-block-warning-text-deep: rgb(245, 211, 152);
   /** Danger */
-  --vp-custom-block-danger-bg: theme('colors.carnation.950');
-  --vp-custom-block-danger-border: theme('colors.carnation.800');
-  --vp-custom-block-danger-text: theme('colors.carnation.200');
-  --vp-custom-block-danger-text-deep: theme('colors.carnation.200');
+  --vp-custom-block-danger-bg: rgb(24, 5, 9);
+  --vp-custom-block-danger-border: rgb(77, 25, 34);
+  --vp-custom-block-danger-text: rgb(245, 152, 170);
+  --vp-custom-block-danger-text-deep: rgb(245, 152, 170);
 }
 
 .vp-doc a {
