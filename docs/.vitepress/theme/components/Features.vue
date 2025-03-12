@@ -1,3 +1,4 @@
+<!-- docs/.vitepress/theme/components/Features.vue -->
 <script setup>
 import FeatureCard from './FeatureCard.vue';
 
@@ -27,7 +28,8 @@ const features = [
 </script>
 
 <template>
-  <div class="features-container">
+  <section aria-labelledby="features-heading" class="features-container">
+    <h2 id="features-heading" class="sr-only">Featured Topics</h2>
     <div class="features-grid">
       <FeatureCard
         v-for="(feature, index) in features"
@@ -39,7 +41,7 @@ const features = [
         :icon-color="feature.iconColor"
       />
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped>
@@ -53,6 +55,19 @@ const features = [
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
+}
+
+/* Screen reader only class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 @media (min-width: 640px) {

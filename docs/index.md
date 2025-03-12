@@ -2,6 +2,20 @@
 title: Welcome
 layout: home
 description: My Digital Universe - Curated
+head:
+  - - meta
+    - name: description
+      content: Welcome to Colter+ - My Digital Universe Curated
+  - - meta
+    - name: og:title
+      content: Colter+ | My Digital Universe
+  - - meta
+    - name: og:description
+      content: A curated collection of projects, guides, and blog posts
+  - - link
+    - rel: preload
+      href: /hero-logo.png
+      as: image
 
 hero:
   name: Colter+

@@ -13,7 +13,8 @@ import { data as projects } from './projects.data.js'
   <div v-for="project in projects" :key="project.url" class="project-card">
     <div class="project-image">
       <a :href="project.url">
-        <img :src="`/projects/${project.dir}/assets/banner.png`" :alt="project.frontmatter.title" onerror="this.src='/placeholder-project.png'">
+        <!-- Added loading="lazy" attribute -->
+        <img :src="`/projects/${project.dir}/assets/banner.png`" :alt="project.frontmatter.title" loading="lazy" onerror="this.src='/placeholder-project.png'">
       </a>
     </div>
     <div class="project-content">
@@ -29,14 +30,8 @@ import { data as projects } from './projects.data.js'
           {{ tag }}
         </span>
       </div>
-      <a :href="project.url" class="view-project">View Project →</a>
+      <a :href="project.url" class="view-project" aria-label="View project details">View Project →</a>
     </div>
-  </div>
-</div>
-<div v-else>
-  <div class="empty-projects">
-    <p>No projects found yet. Create your first project using the content generator!</p>
-    <pre>npm run create</pre>
   </div>
 </div>
 

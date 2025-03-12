@@ -1,4 +1,4 @@
-// https://vitepress.dev/guide/custom-theme
+// docs/.vitepress/theme/index.ts
 import { h } from 'vue';
 import type { Theme } from 'vitepress';
 import DefaultTheme from 'vitepress/theme';
@@ -18,5 +18,7 @@ export default {
     // Register components globally
     app.component('HomeStatus', HomeStatus);
     app.component('FeatureCard', FeatureCard);
-  },
+    
+    // No router hooks - VitePress doesn't support them in the same way as Vue Router
+  }
 } satisfies Theme;

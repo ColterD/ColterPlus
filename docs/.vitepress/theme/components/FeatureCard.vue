@@ -1,3 +1,4 @@
+<!-- docs/.vitepress/theme/components/FeatureCard.vue -->
 <script setup>
 defineProps({
   title: {
@@ -24,15 +25,22 @@ defineProps({
 </script>
 
 <template>
-  <div class="feature-card">
+  <div class="feature-card" tabindex="0">
     <div class="feature-card-content">
-      <div class="feature-card-icon" :style="{ color: iconColor }">
+      <div class="feature-card-icon" :style="{ color: iconColor }" aria-hidden="true">
         <span v-html="icon"></span>
       </div>
 
-        <a :href="link">{{ title }}</a>
+      <h3 class="feature-card-title">
+        <a :href="link" :aria-label="`Go to ${title}`">{{ title }}</a>
+      </h3>
 
       <p class="feature-card-description">{{ description }}</p>
+      
+      <a :href="link" class="feature-card-link" aria-hidden="true">
+        Learn more
+        <span class="feature-card-arrow">→</span>
+      </a>
     </div>
   </div>
 </template>
@@ -43,14 +51,19 @@ defineProps({
   padding: 24px 20px;
   border-radius: 12px;
   background-color: var(--vp-c-bg-soft);
-  transition: border 0.3s, box-shadow 0.3s;
+  transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
   height: 100%;
   border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  outline: none;
 }
 
-.feature-card:hover {
-  border-color: var(--vp-c-brand-1);
-  box-shadow: 0 0 20px rgba(var(--vp-c-brand-1-rgb), 0.1);
+.feature-card:hover,
+.feature-card:focus-visible {
+  transform: translateY(-4px);
+  border-left-color: var(--vp-c-brand-1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
 .feature-card-content {
@@ -64,23 +77,28 @@ defineProps({
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 50%;
-  margin-bottom: 12px; /* Reduced space */
+  margin-bottom: 16px;
+  transition: transform 0.3s;
+}
+
+.feature-card:hover .feature-card-icon {
+  transform: scale(1.1);
 }
 
 .feature-card-icon :deep(svg) {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
 }
 
 .feature-card-title {
   font-size: 1.25rem;
   line-height: 1.4;
   font-weight: 600;
-  margin: 0 0 8px; /* Reduced space */
+  margin: 0 0 12px;
   text-align: center;
 }
 
@@ -99,7 +117,34 @@ defineProps({
   line-height: 1.6;
   color: var(--vp-c-text-2);
   text-align: center;
-  margin: 0;
+  margin: 0 0 auto;
   flex-grow: 1;
+}
+
+.feature-card-link {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--vp-c-brand-1);
+  text-decoration: none;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.feature-card:hover .feature-card-link {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.feature-card-arrow {
+  transition: transform 0.2s;
+  margin-left: 4px;
+}
+
+.feature-card:hover .feature-card-arrow {
+  transform: translateX(4px);
 }
 </style>

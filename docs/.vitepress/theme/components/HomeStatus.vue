@@ -38,6 +38,8 @@ const services = ref([
 ]);
 
 const loading = ref(true);
+const showToast = ref(false);
+const toastMessage = ref('');
 
 // Enhanced function to format time since last outage with hours
 function formatTimeSince(date) {
@@ -74,7 +76,9 @@ function fetchStatus() {
   loading.value = true;
   
   setTimeout(() => {
-    services.value = services.value.map(service => {
+    const oldServices = [...services.value];
+    
+    services.value = services.value.map((service, index) => {
       // In a real implementation, this data would come from your API
       const randomStatus = Math.random() > 0.1 ? 'operational' : (Math.random() > 0.5 ? 'degraded' : 'down');
       const randomPing = Math.floor(5 + Math.random() * 25); // Random ping between 5-30ms
@@ -87,6 +91,11 @@ function fetchStatus() {
       lastOutage.setDate(lastOutage.getDate() - daysAgo);
       lastOutage.setHours(lastOutage.getHours() - hoursAgo);
       
+      // Check if status changed from operational to something else
+      if (oldServices[index].status === 'operational' && randomStatus !== 'operational' && !loading.value) {
+        showStatusToast(`${service.name} status changed to ${randomStatus}`);
+      }
+      
       return {
         ...service,
         status: randomStatus,
@@ -97,6 +106,15 @@ function fetchStatus() {
     
     loading.value = false;
   }, 1000);
+}
+
+function showStatusToast(message) {
+  toastMessage.value = message;
+  showToast.value = true;
+  
+  setTimeout(() => {
+    showToast.value = false;
+  }, 5000);
 }
 
 function getIconSvg(icon) {
@@ -114,20 +132,10 @@ function getIconSvg(icon) {
   }
 }
 
-function getStatusColor(status) {
-  switch (status) {
-    case 'loading': return '#6b7280';
-    case 'operational': return '#10b981';
-    case 'degraded': return '#f59e0b';
-    case 'down': return '#ef4444';
-    default: return '#6b7280';
-  }
-}
-
 onMounted(() => {
   fetchStatus();
-  // Set up periodic refresh
-  const intervalId = setInterval(fetchStatus, 60000); // Refresh every minute
+  // Changed from 60000 to 300000 (5 minutes)
+  const intervalId = setInterval(fetchStatus, 300000);
   
   onUnmounted(() => {
     clearInterval(intervalId);
@@ -137,33 +145,54 @@ onMounted(() => {
 
 <template>
   <div class="home-status-dashboard">
-    <h2 class="status-heading">Service Status</h2>
+    <h2 class="status-heading" id="service-status" aria-label="Service Status Dashboard">Service Status</h2>
     
     <div class="status-grid">
       <div v-for="service in services" 
            :key="service.name" 
            class="status-card"
-           :class="{ 'loading': loading }">
-        <div class="status-icon" v-html="getIconSvg(service.icon)"></div>
+           :class="{ 'loading': loading }"
+           :aria-label="`${service.name} status: ${loading ? 'Checking' : service.status}`">
+        <div class="status-icon" v-html="getIconSvg(service.icon)" role="img" :aria-label="`${service.name} icon`"></div>
         <h3 class="service-name">{{ service.name }}</h3>
         <div class="status-indicator">
-          <span class="status-dot" :style="{ backgroundColor: getStatusColor(service.status) }"></span>
+          <!-- Fixed status dot that will always show with the correct color -->
+          <span 
+            class="status-dot" 
+            :class="{
+              'operational': service.status === 'operational',
+              'degraded': service.status === 'degraded',
+              'down': service.status === 'down',
+              'loading': service.status === 'loading'
+            }"
+          ></span>
           <span class="status-text">{{ loading ? 'Checking...' : (service.status === 'operational' ? 'Online' : service.status === 'degraded' ? 'Issues' : 'Offline') }}</span>
         </div>
-        <div class="stats-row" v-if="!loading">
+        <div class="stats-row">
           <div class="stat">
             <span class="stat-label">PING</span>
-            <span class="stat-value">{{ service.ping }}ms</span>
+            <span class="stat-value">{{ !loading ? `${service.ping}ms` : '—' }}</span>
           </div>
           <div class="stat">
             <span class="stat-label">UPTIME</span>
-            <span class="stat-value">{{ formatTimeSince(service.lastOutage) }}</span>
+            <span class="stat-value">{{ !loading ? formatTimeSince(service.lastOutage) : '—' }}</span>
           </div>
         </div>
       </div>
     </div>
     
-    <a href="/status" class="status-link">View detailed status</a>
+    <a href="/status" class="status-link" aria-label="View detailed service status page">View detailed status</a>
+    
+    <!-- New separator line -->
+    <div class="status-separator"></div>
+    
+    <!-- Toast notification for critical status changes (hidden by default) -->
+    <div class="status-toast" :class="{ 'show': showToast }" role="alert" aria-live="polite">
+      <div class="status-toast-content">
+        <span class="status-toast-icon">⚠️</span>
+        <span class="status-toast-message">{{ toastMessage }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -172,6 +201,7 @@ onMounted(() => {
   max-width: 800px;
   margin: 2rem auto 3rem;
   text-align: center;
+  position: relative; /* For toast positioning */
 }
 
 .status-heading {
@@ -200,21 +230,29 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: border 0.2s;
+  transition: transform 0.2s, border 0.2s, box-shadow 0.2s;
   border: 1px solid transparent;
+  min-height: 175px; /* Fixed height to prevent layout shifting */
 }
 
 .status-card:hover {
   border-color: var(--vp-c-divider);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .status-card.loading {
-  opacity: 0.7;
+  opacity: 0.9;
 }
 
 .status-icon {
   margin-bottom: 0.5rem;
   color: var(--vp-c-text-2);
+  transition: transform 0.3s;
+}
+
+.status-card:hover .status-icon {
+  transform: scale(1.1);
 }
 
 .service-name {
@@ -236,6 +274,28 @@ onMounted(() => {
   height: 8px;
   border-radius: 50%;
   display: inline-block;
+  transition: transform 0.3s; /* Animation for status changes */
+}
+
+/* Define colors directly in CSS classes instead of inline styles */
+.status-dot.operational {
+  background-color: #10b981; /* green */
+}
+
+.status-dot.degraded {
+  background-color: #f59e0b; /* amber */
+}
+
+.status-dot.down {
+  background-color: #ef4444; /* red */
+}
+
+.status-dot.loading {
+  background-color: #6b7280; /* gray */
+}
+
+.status-card:hover .status-dot {
+  transform: scale(1.5);
 }
 
 .status-text {
@@ -249,6 +309,7 @@ onMounted(() => {
   margin-top: 0.5rem;
   justify-content: space-around;
   gap: 0.5rem;
+  min-height: 40px; /* Fixed height to prevent layout shifting */
 }
 
 .stat {
@@ -268,6 +329,8 @@ onMounted(() => {
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--vp-c-text-2);
+  min-height: 1.2em; /* Ensure consistent height */
+  display: block; /* Ensure block display for consistent spacing */
 }
 
 .status-link {
@@ -276,11 +339,67 @@ onMounted(() => {
   color: var(--vp-c-brand);
   text-decoration: none;
   font-size: 0.9rem;
-  transition: color 0.2s;
+  transition: color 0.2s, transform 0.2s;
 }
 
 .status-link:hover {
   color: var(--vp-c-brand-dark);
   text-decoration: underline;
+  transform: translateY(-1px);
+}
+
+/* Add the separator line */
+.status-separator {
+  border-top: 1px solid var(--vp-c-divider);
+  margin: 2rem auto 0;
+  max-width: 600px;
+}
+
+/* Toast notification for status changes */
+.status-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: var(--vp-c-bg-alt);
+  border-left: 4px solid var(--vp-c-brand);
+  border-radius: 4px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  z-index: 100;
+  transform: translateY(150%);
+  transition: transform 0.3s ease-out;
+  max-width: 300px;
+}
+
+.status-toast.show {
+  transform: translateY(0);
+}
+
+.status-toast-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-toast-icon {
+  font-size: 1.2rem;
+}
+
+.status-toast-message {
+  font-size: 0.9rem;
+  color: var(--vp-c-text-1);
+}
+
+/* Status change animations */
+@keyframes statusPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.5); }
+  100% { transform: scale(1); }
+}
+
+.status-dot.status-changed {
+  animation: statusPulse 0.6s ease-in-out;
 }
 </style>
