@@ -247,3 +247,20 @@
   background-color: currentColor;
   color: inherit;
 }
+
+:root {
+  /* Feature card component customization */
+  --feature-icon-size: 64px;
+  --feature-icon-padding: 1rem;
+  --feature-card-width: 300px;
+  --feature-card-padding: 1.5rem;
+  --feature-title-size: 1.3rem;
+  --feature-text-size: 1rem;
+  --feature-section-gap: 1.5rem;
+}
+
+.dark {
+  /* Feature card component customization - dark mode if needed */
+  --feature-icon-size: 64px;
+  --feature-icon-padding: 1rem;
+}

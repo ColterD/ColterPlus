@@ -1,17 +1,75 @@
+<!-- docs/.vitepress/theme/components/HomeStatus.vue -->
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 const services = ref([
-  { name: 'Media Server', icon: 'film', status: 'loading', uptime: '0%' },
-  { name: 'Smart Home', icon: 'home', status: 'loading', uptime: '0%' },
-  { name: 'Storage', icon: 'hard-drive', status: 'loading', uptime: '0%' },
-  { name: 'Network', icon: 'wifi', status: 'loading', uptime: '0%' }
+  { 
+    name: 'Media Server', 
+    icon: 'film', 
+    status: 'loading', 
+    uptime: '0%', 
+    ping: null, 
+    lastOutage: null 
+  },
+  { 
+    name: 'Smart Home', 
+    icon: 'home', 
+    status: 'loading', 
+    uptime: '0%', 
+    ping: null, 
+    lastOutage: null 
+  },
+  { 
+    name: 'Storage', 
+    icon: 'hard-drive', 
+    status: 'loading', 
+    uptime: '0%', 
+    ping: null, 
+    lastOutage: null 
+  },
+  { 
+    name: 'Network', 
+    icon: 'wifi', 
+    status: 'loading', 
+    uptime: '0%', 
+    ping: null, 
+    lastOutage: null 
+  }
 ]);
 
 const loading = ref(true);
 
-// This would ideally fetch from your own API endpoint that checks your services
-// For demo purposes, we're simulating with random statuses
+// Enhanced function to format time since last outage with hours
+function formatTimeSince(date) {
+  if (!date) return 'N/A';
+  
+  const seconds = Math.floor((new Date() - date) / 1000);
+  
+  // Days
+  const days = Math.floor(seconds / 86400);
+  
+  // Hours
+  const hoursSeconds = seconds % 86400;
+  const hours = Math.floor(hoursSeconds / 3600);
+  
+  if (days > 0) {
+    return `${days}d ${hours}h`;
+  }
+  
+  if (hours > 0) {
+    const minutesSeconds = hoursSeconds % 3600;
+    const minutes = Math.floor(minutesSeconds / 60);
+    return `${hours}h ${minutes}m`;
+  }
+  
+  const minutes = Math.floor(seconds / 60);
+  if (minutes > 0) {
+    return `${minutes}m`;
+  }
+  
+  return `${Math.floor(seconds)}s`;
+}
+
 function fetchStatus() {
   loading.value = true;
   
@@ -19,12 +77,21 @@ function fetchStatus() {
     services.value = services.value.map(service => {
       // In a real implementation, this data would come from your API
       const randomStatus = Math.random() > 0.1 ? 'operational' : (Math.random() > 0.5 ? 'degraded' : 'down');
-      const randomUptime = (90 + Math.random() * 9.9).toFixed(1) + '%';
+      const randomPing = Math.floor(5 + Math.random() * 25); // Random ping between 5-30ms
+      
+      // Random date between 1-30 days ago for last outage
+      const now = new Date();
+      const daysAgo = Math.floor(Math.random() * 30) + 1;
+      const hoursAgo = Math.floor(Math.random() * 24);
+      const lastOutage = new Date(now);
+      lastOutage.setDate(lastOutage.getDate() - daysAgo);
+      lastOutage.setHours(lastOutage.getHours() - hoursAgo);
       
       return {
         ...service,
         status: randomStatus,
-        uptime: randomUptime
+        ping: randomPing,
+        lastOutage: lastOutage
       };
     });
     
@@ -59,6 +126,12 @@ function getStatusColor(status) {
 
 onMounted(() => {
   fetchStatus();
+  // Set up periodic refresh
+  const intervalId = setInterval(fetchStatus, 60000); // Refresh every minute
+  
+  onUnmounted(() => {
+    clearInterval(intervalId);
+  });
 });
 </script>
 
@@ -72,11 +145,19 @@ onMounted(() => {
            class="status-card"
            :class="{ 'loading': loading }">
         <div class="status-icon" v-html="getIconSvg(service.icon)"></div>
-        <div class="status-details">
-          <h3 class="service-name">{{ service.name }}</h3>
-          <div class="status-indicator">
-            <span class="status-dot" :style="{ backgroundColor: getStatusColor(service.status) }"></span>
-            <span class="status-text">{{ loading ? 'Checking...' : (service.status === 'operational' ? 'Online' : service.status === 'degraded' ? 'Issues' : 'Offline') }}</span>
+        <h3 class="service-name">{{ service.name }}</h3>
+        <div class="status-indicator">
+          <span class="status-dot" :style="{ backgroundColor: getStatusColor(service.status) }"></span>
+          <span class="status-text">{{ loading ? 'Checking...' : (service.status === 'operational' ? 'Online' : service.status === 'degraded' ? 'Issues' : 'Offline') }}</span>
+        </div>
+        <div class="stats-row" v-if="!loading">
+          <div class="stat">
+            <span class="stat-label">PING</span>
+            <span class="stat-value">{{ service.ping }}ms</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">UPTIME</span>
+            <span class="stat-value">{{ formatTimeSince(service.lastOutage) }}</span>
           </div>
         </div>
       </div>
@@ -103,7 +184,7 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 @media (min-width: 640px) {
@@ -119,13 +200,12 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: border 0.2s;
+  border: 1px solid transparent;
 }
 
 .status-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--vp-c-divider);
 }
 
 .status-card.loading {
@@ -133,7 +213,7 @@ onMounted(() => {
 }
 
 .status-icon {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   color: var(--vp-c-text-2);
 }
 
@@ -148,6 +228,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .status-dot {
@@ -159,6 +240,33 @@ onMounted(() => {
 
 .status-text {
   font-size: 0.85rem;
+  color: var(--vp-c-text-2);
+}
+
+.stats-row {
+  display: flex;
+  width: 100%;
+  margin-top: 0.5rem;
+  justify-content: space-around;
+  gap: 0.5rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--vp-c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: 0.85rem;
+  font-weight: 500;
   color: var(--vp-c-text-2);
 }
 

@@ -2,8 +2,10 @@
 import { h } from 'vue';
 import type { Theme } from 'vitepress';
 import DefaultTheme from 'vitepress/theme';
-import HomeStatus from './components/HomeStatus.vue';  // This path is correct
+import HomeStatus from './components/HomeStatus.vue';
+import FeatureCard from './components/FeatureCard.vue';
 import './style.css';
+import './custom.css';
 
 export default {
   extends: DefaultTheme,
@@ -13,7 +15,8 @@ export default {
     });
   },
   enhanceApp({ app, router, siteData }) {
-    // Register the HomeStatus component globally
+    // Register components globally
     app.component('HomeStatus', HomeStatus);
+    app.component('FeatureCard', FeatureCard);
   },
 } satisfies Theme;
