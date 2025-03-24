@@ -15,7 +15,7 @@ import { data as posts } from './posts.data.ts'
       <a :href="post.url">{{ post.frontmatter.title }}</a>
     </h2>
     <div class="post-meta">
-      {{ post.frontmatter.date }} • 
+      {{ post.date.formatted }} • 
       <span v-for="(tag, index) in post.frontmatter.tags" :key="tag">
         <a :href="`/tags/${tag}`" class="tag">{{ tag }}</a>
         <span v-if="index < post.frontmatter.tags.length - 1">, </span>

@@ -22,5 +22,10 @@ export default {
           '200': 'rgb(245, 152, 170)',
         },
       }
+    },
+    shortcuts: {
+      'btn': 'px-4 py-2 rounded-lg bg-swarm-800 text-white hover:opacity-90 transition-opacity',
+      'card': 'p-4 rounded-lg bg-swarm-950 shadow-md',
+      'input': 'p-2 rounded-md border border-swarm-800 bg-transparent focus:outline-none focus:ring-2 focus:ring-meadow-800',
     }
   }

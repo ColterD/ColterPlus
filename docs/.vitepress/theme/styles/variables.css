@@ -1,0 +1,36 @@
+:root {
+    /* Status Colors */
+    --status-operational: #10B981;
+    --status-degraded: #F59E0B;
+    --status-down: #EF4444;
+    --status-loading: #6B7280;
+    
+    /* Feature Component Variables */
+    --feature-icon-size: 64px;
+    --feature-icon-padding: 1rem;
+    --feature-card-width: 300px;
+    --feature-card-padding: 1.5rem;
+    --feature-title-size: 1.3rem;
+    --feature-text-size: 1rem;
+    --feature-section-gap: 1.5rem;
+    
+    /* Animation Timings */
+    --transition-fast: 0.2s;
+    --transition-medium: 0.3s;
+    --transition-slow: 0.5s;
+    
+    /* Component Spacing */
+    --card-gap: 1.5rem;
+    --section-gap: 2rem;
+    --content-width-narrow: 800px;
+    --content-width-medium: 1024px;
+    --content-width-wide: 1200px;
+  }
+  
+  .dark {
+    /* Dark Mode Adjustments */
+    --status-operational: #10B981;
+    --status-degraded: #F59E0B;
+    --status-down: #EF4444;
+    --status-loading: #6B7280;
+  }

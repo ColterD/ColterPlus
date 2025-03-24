@@ -4,17 +4,56 @@ layout: doc
 ---
 
 <script setup>
-import { data as projects } from './projects.data.js'
+import { data as projects } from './projects.data.ts'
+import { ref } from 'vue'
+
+const projectFilter = ref('all')
+
+const filteredProjects = computed(() => {
+  if (projectFilter.value === 'all') {
+    return projects
+  }
+  return projects.filter(project => 
+    project.frontmatter.status === projectFilter.value
+  )
+})
 </script>
 
 # My Projects
 
-<div v-if="projects && projects.length" class="projects-grid">
-  <div v-for="project in projects" :key="project.url" class="project-card">
+<div class="project-filters">
+  <button 
+    @click="projectFilter = 'all'" 
+    :class="['filter-button', projectFilter === 'all' ? 'active' : '']">
+    All
+  </button>
+  <button 
+    @click="projectFilter = 'completed'" 
+    :class="['filter-button', projectFilter === 'completed' ? 'active' : '']">
+    Completed
+  </button>
+  <button 
+    @click="projectFilter = 'in-progress'" 
+    :class="['filter-button', projectFilter === 'in-progress' ? 'active' : '']">
+    In Progress
+  </button>
+  <button 
+    @click="projectFilter = 'planned'" 
+    :class="['filter-button', projectFilter === 'planned' ? 'active' : '']">
+    Planned
+  </button>
+</div>
+
+<div v-if="filteredProjects.length" class="projects-grid">
+  <div v-for="project in filteredProjects" :key="project.url" class="project-card">
     <div class="project-image">
       <a :href="project.url">
-        <!-- Added loading="lazy" attribute -->
-        <img :src="`/projects/${project.dir}/assets/banner.png`" :alt="project.frontmatter.title" loading="lazy" onerror="this.src='/placeholder-project.png'">
+        <OptimizedImage 
+          :src="`/projects/${project.dir}/assets/banner.png`" 
+          :alt="project.frontmatter.title" 
+          :fallbackSrc="'/placeholder-project.png'" 
+          lazy
+        />
       </a>
     </div>
     <div class="project-content">
@@ -35,7 +74,35 @@ import { data as projects } from './projects.data.js'
   </div>
 </div>
 
+<div v-else class="empty-projects">
+  <p>No projects found matching the current filter.</p>
+  <button @click="projectFilter = 'all'" class="filter-button active">Show All Projects</button>
+</div>
+
 <style>
+.project-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.filter-button {
+  padding: 0.5rem 1rem;
+  background-color: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-button.active {
+  background-color: var(--vp-c-brand);
+  color: white;
+  border-color: var(--vp-c-brand);
+}
+
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -61,17 +128,6 @@ import { data as projects } from './projects.data.js'
 .project-image {
   height: 180px;
   overflow: hidden;
-}
-
-.project-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.project-card:hover .project-image img {
-  transform: scale(1.05);
 }
 
 .project-content {
@@ -160,13 +216,5 @@ import { data as projects } from './projects.data.js'
   text-align: center;
   background-color: var(--vp-c-bg-soft);
   border-radius: 8px;
-}
-
-.empty-projects pre {
-  display: inline-block;
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  background-color: var(--vp-c-bg-mute);
-  border-radius: 4px;
 }
 </style>

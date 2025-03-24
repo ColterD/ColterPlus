@@ -26,6 +26,7 @@ export default defineConfig({
   description: 'My Digital Universe - Curated',
   titleTemplate: ':title • Colter+',
   appearance: 'force-dark',
+  srcDir: './content', // Updated to point to the new content directory
   head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
   lastUpdated: true,
   cleanUrls: true,
@@ -40,11 +41,12 @@ export default defineConfig({
       {
         text: 'Guides',
         items: [
-          { text: 'Item A', link: '/item-1' },
-          { text: 'Item B', link: '/item-2' },
-          { text: 'Item C', link: '/item-3' }
+          { text: 'All Guides', link: '/guides/' },
+          { text: 'Beginners', link: '/guides/?difficulty=beginner' },
+          { text: 'Advanced', link: '/guides/?difficulty=advanced' }
         ]
       },
+      { text: 'Status', link: '/status' },
       { text: 'Changelog', link: 'https://github.com/...' },
     ],
     sidebar: {
@@ -99,7 +101,6 @@ export default defineConfig({
     plugins: [
       UnoCSS(unocssConfig),
       AutoImport({
-        // Auto import configs
         imports: ['vue', '@vueuse/core'],
         dts: true,
       }),
@@ -107,9 +108,24 @@ export default defineConfig({
     ssr: {
       noExternal: ['nprogress']
     },
-    // Add this resolve configuration
     resolve: {
       extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+    },
+    build: {
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+        },
+      },
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vue: ['vue'],
+            vueuse: ['@vueuse/core'],
+          }
+        }
+      }
     }
   }
 });

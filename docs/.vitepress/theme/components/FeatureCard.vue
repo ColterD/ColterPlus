@@ -1,4 +1,3 @@
-<!-- docs/.vitepress/theme/components/FeatureCard.vue -->
 <script setup>
 defineProps({
   title: {
@@ -77,8 +76,8 @@ defineProps({
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 64px;
-  height: 64px;
+  width: var(--feature-icon-size, 64px);
+  height: var(--feature-icon-size, 64px);
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 50%;
   margin-bottom: 16px;
@@ -95,7 +94,7 @@ defineProps({
 }
 
 .feature-card-title {
-  font-size: 1.25rem;
+  font-size: var(--feature-title-size, 1.25rem);
   line-height: 1.4;
   font-weight: 600;
   margin: 0 0 12px;
@@ -113,7 +112,7 @@ defineProps({
 }
 
 .feature-card-description {
-  font-size: 0.9rem;
+  font-size: var(--feature-text-size, 0.9rem);
   line-height: 1.6;
   color: var(--vp-c-text-2);
   text-align: center;

@@ -1,0 +1,121 @@
+/* Common Button Styles */
+.vp-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1.25rem;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: background-color var(--transition-fast), transform var(--transition-fast), 
+                color var(--transition-fast), box-shadow var(--transition-fast);
+    cursor: pointer;
+    text-decoration: none;
+    border: 1px solid transparent;
+  }
+  
+  .vp-button:hover {
+    transform: translateY(-1px);
+  }
+  
+  .vp-button.primary {
+    background-color: var(--vp-c-brand);
+    color: white;
+  }
+  
+  .vp-button.primary:hover {
+    background-color: var(--vp-c-brand-dark);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .vp-button.secondary {
+    background-color: var(--vp-c-bg-soft);
+    color: var(--vp-c-text-1);
+    border-color: var(--vp-c-divider);
+  }
+  
+  .vp-button.secondary:hover {
+    background-color: var(--vp-c-bg-mute);
+    border-color: var(--vp-c-text-3);
+  }
+  
+  /* Card Styles */
+  .vp-card {
+    background-color: var(--vp-c-bg-soft);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    border: 1px solid transparent;
+  }
+  
+  .vp-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-color: var(--vp-c-divider);
+  }
+  
+  .vp-card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--vp-c-divider);
+  }
+  
+  .vp-card-content {
+    padding: 1.5rem;
+  }
+  
+  .vp-card-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--vp-c-divider);
+  }
+  
+  /* Status Indicator Styles */
+  .vp-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  
+  .vp-status-dot.operational {
+    background-color: var(--status-operational);
+  }
+  
+  .vp-status-dot.degraded {
+    background-color: var(--status-degraded);
+  }
+  
+  .vp-status-dot.down {
+    background-color: var(--status-down);
+  }
+  
+  .vp-status-dot.loading {
+    background-color: var(--status-loading);
+  }
+  
+  /* Badge Styles */
+  .vp-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  
+  .vp-badge.success {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: var(--status-operational);
+  }
+  
+  .vp-badge.warning {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: var(--status-degraded);
+  }
+  
+  .vp-badge.error {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--status-down);
+  }
+  
+  .vp-badge.info {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #3B82F6;
+  }

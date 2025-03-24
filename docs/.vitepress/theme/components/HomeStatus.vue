@@ -1,14 +1,10 @@
-<!-- docs/.vitepress/theme/components/HomeStatus.vue -->
 <script setup>
-import { ref, onMounted, onUnmounted, watch, toRaw } from 'vue';
-import { useStorage, useIntervalFn } from '@vueuse/core';
+import { ref, onMounted } from 'vue';
+import { useStatusData } from '../composables/useStatusData';
+import { useUIComponents } from '../composables/useUIComponents';
 
-// Use storage to cache data and last fetch time
-const cachedServices = useStorage('home-status-services', null);
-const lastFetchTime = useStorage('home-status-last-fetch', 0);
-const CACHE_TIMEOUT = 300000; // 5 minutes
-
-const services = ref([
+// Initial data structure
+const initialServices = [
   { 
     name: 'Media Server', 
     icon: 'film', 
@@ -41,119 +37,22 @@ const services = ref([
     ping: null, 
     lastOutage: null 
   }
-]);
+];
 
-const loading = ref(true);
+// Use our composables
+const { 
+  data: services, 
+  loading, 
+  operationalCount, 
+  fetchData,
+  formatTimeSince 
+} = useStatusData('home-status', initialServices);
+
+const { getIconSvg } = useUIComponents();
+
+// Toast notifications
 const showToast = ref(false);
 const toastMessage = ref('');
-const error = ref(null);
-
-// Status change tracking
-const statusChangeDetector = (oldServices, newServices) => {
-  newServices.forEach((service, index) => {
-    const oldService = oldServices[index];
-    if (oldService.status === 'operational' && service.status !== 'operational') {
-      showStatusToast(`${service.name} status changed to ${service.status}`);
-    }
-  });
-};
-
-// Enhanced function to format time since last outage
-function formatTimeSince(date) {
-  if (!date) return 'N/A';
-  
-  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-  
-  // Days
-  const days = Math.floor(seconds / 86400);
-  
-  // Hours
-  const hoursSeconds = seconds % 86400;
-  const hours = Math.floor(hoursSeconds / 3600);
-  
-  if (days > 0) {
-    return `${days}d ${hours}h`;
-  }
-  
-  if (hours > 0) {
-    const minutesSeconds = hoursSeconds % 3600;
-    const minutes = Math.floor(minutesSeconds / 60);
-    return `${hours}h ${minutes}m`;
-  }
-  
-  const minutes = Math.floor(seconds / 60);
-  if (minutes > 0) {
-    return `${minutes}m`;
-  }
-  
-  return `${Math.floor(seconds)}s`;
-}
-
-async function fetchStatus(force = false) {
-  const now = Date.now();
-  const shouldFetch = force || !cachedServices.value || (now - lastFetchTime.value > CACHE_TIMEOUT);
-  
-  if (!shouldFetch) {
-    // Use cached data
-    if (cachedServices.value) {
-      // Store old services for status change detection
-      const oldServices = toRaw(services.value);
-      // Update services with cached data
-      services.value = cachedServices.value;
-      loading.value = false;
-      
-      // Check for status changes
-      statusChangeDetector(oldServices, services.value);
-    }
-    return;
-  }
-  
-  loading.value = true;
-  error.value = null;
-  
-  try {
-    // In a real implementation, this would be an API call
-    // Simulating API call with timeout
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Store old services for status change detection
-    const oldServices = toRaw(services.value);
-    
-    // Update services with new data
-    const updatedServices = services.value.map(service => {
-      // Mock data generation
-      const randomStatus = Math.random() > 0.1 ? 'operational' : (Math.random() > 0.5 ? 'degraded' : 'down');
-      const randomPing = Math.floor(5 + Math.random() * 25);
-      
-      // Random date for last outage
-      const now = new Date();
-      const daysAgo = Math.floor(Math.random() * 30) + 1;
-      const hoursAgo = Math.floor(Math.random() * 24);
-      const lastOutage = new Date(now);
-      lastOutage.setDate(lastOutage.getDate() - daysAgo);
-      lastOutage.setHours(lastOutage.getHours() - hoursAgo);
-      
-      return {
-        ...service,
-        status: randomStatus,
-        ping: randomPing,
-        lastOutage: lastOutage
-      };
-    });
-    
-    services.value = updatedServices;
-    cachedServices.value = updatedServices;
-    lastFetchTime.value = now;
-    
-    // Check for status changes
-    statusChangeDetector(oldServices, updatedServices);
-  } catch (err) {
-    error.value = 'Failed to fetch service status. Please try again later.';
-    console.error('Error fetching status:', err);
-  } finally {
-    loading.value = false;
-  }
-}
 
 function showStatusToast(message) {
   toastMessage.value = message;
@@ -164,22 +63,8 @@ function showStatusToast(message) {
   }, 5000);
 }
 
-function getIconSvg(icon) {
-  // Existing implementation...
-}
-
-// Automatically refresh status at intervals
-const { pause, resume } = useIntervalFn(() => {
-  fetchStatus(true);
-}, CACHE_TIMEOUT);
-
 onMounted(() => {
-  fetchStatus();
-  resume();
-});
-
-onUnmounted(() => {
-  pause();
+  fetchData();
 });
 </script>
 
@@ -196,7 +81,6 @@ onUnmounted(() => {
         <div class="status-icon" v-html="getIconSvg(service.icon)" role="img" :aria-label="`${service.name} icon`"></div>
         <h3 class="service-name">{{ service.name }}</h3>
         <div class="status-indicator">
-          <!-- Fixed status dot that will always show with the correct color -->
           <span 
             class="status-dot" 
             :class="{
@@ -223,10 +107,8 @@ onUnmounted(() => {
     
     <a href="/status" class="status-link" aria-label="View detailed service status page">View detailed status</a>
     
-    <!-- New separator line -->
     <div class="status-separator"></div>
     
-    <!-- Toast notification for critical status changes (hidden by default) -->
     <div class="status-toast" :class="{ 'show': showToast }" role="alert" aria-live="polite">
       <div class="status-toast-content">
         <span class="status-toast-icon">⚠️</span>
@@ -237,6 +119,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Keep the existing styles */
 .home-status-dashboard {
   max-width: 800px;
   margin: 2rem auto 3rem;
@@ -314,10 +197,9 @@ onUnmounted(() => {
   height: 8px;
   border-radius: 50%;
   display: inline-block;
-  transition: transform 0.3s; /* Animation for status changes */
+  transition: transform 0.3s;
 }
 
-/* Define colors directly in CSS classes instead of inline styles */
 .status-dot.operational {
   background-color: #10b981; /* green */
 }
@@ -369,8 +251,8 @@ onUnmounted(() => {
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--vp-c-text-2);
-  min-height: 1.2em; /* Ensure consistent height */
-  display: block; /* Ensure block display for consistent spacing */
+  min-height: 1.2em;
+  display: block;
 }
 
 .status-link {
@@ -388,14 +270,12 @@ onUnmounted(() => {
   transform: translateY(-1px);
 }
 
-/* Add the separator line */
 .status-separator {
   border-top: 1px solid var(--vp-c-divider);
   margin: 2rem auto 0;
   max-width: 600px;
 }
 
-/* Toast notification for status changes */
 .status-toast {
   position: fixed;
   bottom: 20px;
@@ -432,7 +312,6 @@ onUnmounted(() => {
   color: var(--vp-c-text-1);
 }
 
-/* Status change animations */
 @keyframes statusPulse {
   0% { transform: scale(1); }
   50% { transform: scale(1.5); }
