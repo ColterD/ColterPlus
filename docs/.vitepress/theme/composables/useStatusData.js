@@ -1,6 +1,14 @@
+// docs/.vitepress/theme/composables/useStatusData.js
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useStorage } from '@vueuse/core';
 
+/**
+ * Hook for managing service status data
+ * @param {string} key - Storage key for caching
+ * @param {Array} initialData - Initial service data
+ * @param {number} cacheTimeout - Cache timeout in ms
+ * @returns {Object} Status data and utilities
+ */
 export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
   const cachedData = useStorage(`${key}-data`, null);
   const lastFetchTime = useStorage(`${key}-last-fetch`, 0);
@@ -8,7 +16,41 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
   const data = ref(Array.isArray(cachedData.value) ? cachedData.value : JSON.parse(JSON.stringify(initialData)));
   const loading = ref(true);
 
-  // For demo purposes - will be replaced with actual API call in production
+  /**
+   * Generate mock data for development
+   * @param {Array} services - Services to generate data for
+   * @returns {Array} Generated service data
+   */
+  function generateMockData(services) {
+    return services.map(service => {
+      const randomStatus = Math.random() > 0.1 
+        ? 'operational' 
+        : (Math.random() > 0.5 ? 'degraded' : 'down');
+      
+      const randomPing = Math.floor(5 + Math.random() * 25);
+      
+      const now = new Date();
+      const daysAgo = Math.floor(Math.random() * 30) + 1;
+      const hoursAgo = Math.floor(Math.random() * 24);
+      const lastOutage = new Date(now);
+      lastOutage.setDate(lastOutage.getDate() - daysAgo);
+      lastOutage.setHours(lastOutage.getHours() - hoursAgo);
+      
+      return {
+        ...service,
+        status: randomStatus,
+        ping: randomPing,
+        pingText: `${randomPing}ms`,
+        lastOutage: lastOutage
+      };
+    });
+  }
+
+  /**
+   * Fetch status data with caching
+   * @param {boolean} force - Force refresh data
+   * @returns {Promise} Promise resolving to updated data
+   */
   const fetchData = (force = false) => {
     const now = Date.now();
     const shouldFetch = force || !cachedData.value || (now - lastFetchTime.value > cacheTimeout);
@@ -16,7 +58,7 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
     if (!shouldFetch) {
       data.value = Array.isArray(cachedData.value) ? cachedData.value : JSON.parse(JSON.stringify(initialData));
       loading.value = false;
-      return;
+      return Promise.resolve(data.value);
     }
     
     loading.value = true;
@@ -25,26 +67,7 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
       setTimeout(() => {
         // Ensure data.value is an array before mapping
         const currentData = Array.isArray(data.value) ? data.value : initialData;
-        
-        const updatedData = currentData.map(service => {
-          const randomStatus = Math.random() > 0.1 ? 'operational' : (Math.random() > 0.5 ? 'degraded' : 'down');
-          const randomPing = Math.floor(5 + Math.random() * 25);
-          
-          const now = new Date();
-          const daysAgo = Math.floor(Math.random() * 30) + 1;
-          const hoursAgo = Math.floor(Math.random() * 24);
-          const lastOutage = new Date(now);
-          lastOutage.setDate(lastOutage.getDate() - daysAgo);
-          lastOutage.setHours(lastOutage.getHours() - hoursAgo);
-          
-          return {
-            ...service,
-            status: randomStatus,
-            ping: randomPing,
-            pingText: `${randomPing}ms`,
-            lastOutage: lastOutage
-          };
-        });
+        const updatedData = generateMockData(currentData);
         
         data.value = updatedData;
         cachedData.value = JSON.parse(JSON.stringify(updatedData));
@@ -60,6 +83,11 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
     data.value.filter(s => s.status === 'operational').length
   );
   
+  /**
+   * Format time since a date in a human-readable format
+   * @param {Date|null} date - Date to format from
+   * @returns {string} Formatted time string
+   */
   const formatTimeSince = (date) => {
     if (!date) return 'N/A';
     
@@ -90,9 +118,18 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
     return `${Math.floor(seconds)}s`;
   };
 
-  // No auto-updates to prevent infinite repeating boxes
+  // Clean up any resources
+  let fetchInterval = null;
+  
   onMounted(() => {
     fetchData();
+  });
+  
+  onUnmounted(() => {
+    if (fetchInterval) {
+      clearInterval(fetchInterval);
+      fetchInterval = null;
+    }
   });
 
   return {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
   src: {
@@ -31,6 +31,7 @@ const props = defineProps({
 const imageLoaded = ref(false);
 const imageError = ref(false);
 const imageRef = ref(null);
+let observer = null;
 
 const handleLoad = () => {
   imageLoaded.value = true;
@@ -38,28 +39,34 @@ const handleLoad = () => {
 
 const handleError = () => {
   imageError.value = true;
-  if (props.fallbackSrc) {
+  if (props.fallbackSrc && imageRef.value) {
     imageRef.value.src = props.fallbackSrc;
   }
 };
 
 onMounted(() => {
   if (props.lazy && 'IntersectionObserver' in window) {
-    const observer = new IntersectionObserver((entries) => {
+    observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting && imageRef.value) {
           imageRef.value.src = props.src;
-          observer.unobserve(imageRef.value);
+          if (observer && imageRef.value) {
+            observer.unobserve(imageRef.value);
+          }
         }
       });
     });
     
     if (imageRef.value) {
       observer.observe(imageRef.value);
-      return () => {
-        if (imageRef.value) observer.unobserve(imageRef.value);
-      };
     }
+  }
+});
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
   }
 });
 </script>

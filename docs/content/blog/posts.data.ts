@@ -1,22 +1,10 @@
 import { createContentLoader } from 'vitepress'
 import type { ContentData } from 'vitepress'
 
-interface PostFrontmatter {
-  title: string
-  description: string
-  date: string
-  tags: string[]
-  author: string
-}
-
-interface Post extends ContentData {
-  frontmatter: PostFrontmatter
-  excerpt: string | undefined
-}
-
+// Keep the type definition simple
 export default createContentLoader('blog/*.md', {
   excerpt: true,
-  transform(rawData) {
+  transform(rawData: ContentData[]) {
     return rawData
       .sort((a, b) => {
         return new Date(b.frontmatter.date).getTime() - new Date(a.frontmatter.date).getTime()
