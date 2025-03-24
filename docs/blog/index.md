@@ -4,7 +4,7 @@ layout: doc
 ---
 
 <script setup>
-import { data as posts } from './posts.data.js'
+import { data as posts } from './posts.data.ts'
 </script>
 
 # Blog

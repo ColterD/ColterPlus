@@ -1,6 +1,6 @@
 <!-- docs/.vitepress/theme/components/StatusPage.vue -->
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 
 // Alert status - normally hidden, but can be shown when needed
 const alertStatus = ref({
@@ -8,6 +8,10 @@ const alertStatus = ref({
   type: 'maintenance', // can be 'maintenance', 'outage', 'notice'
   message: 'Planned maintenance on Media Server scheduled for March 15th, 2025 from 2:00 AM to 4:00 AM.'
 });
+
+// Tooltip position state
+const tooltipPosition = ref({ x: 0, y: 0 });
+const activeTooltip = ref(null);
 
 // For demonstration, let's add a toggle function
 function toggleAlert() {
@@ -72,8 +76,35 @@ const services = ref([
   }
 ]);
 
+// Computed properties for aggregated metrics
+const operationalCount = computed(() => {
+  return services.value.filter(s => s.status === 'operational').length;
+});
+
+const averageUptime = computed(() => {
+  const uptimeSum = services.value.reduce((sum, service) => {
+    const uptime = parseFloat(service.uptime);
+    return sum + (isNaN(uptime) ? 0 : uptime);
+  }, 0);
+  return (uptimeSum / services.value.length).toFixed(1);
+});
+
 const lastUpdate = ref('March 12, 2025, 6:07:08 PM');
 const loading = ref(false);
+
+// Tooltip handling functions using Vue's reactivity
+function showTooltip(serviceIndex, dayIndex, event) {
+  activeTooltip.value = `${serviceIndex}-${dayIndex}`;
+  tooltipPosition.value = { x: event.pageX, y: event.pageY - 10 };
+}
+
+function hideTooltip() {
+  activeTooltip.value = null;
+}
+
+function handleTooltipMove(event) {
+  tooltipPosition.value = { x: event.pageX, y: event.pageY - 10 };
+}
 
 // Simplified functions
 function getStatusText(status) {
@@ -102,23 +133,6 @@ function fetchStatus() {
   // Simple refresh function
   lastUpdate.value = new Date().toLocaleString();
 }
-
-// Add this event listener to make tooltips follow cursor - MOVED FROM STYLE SECTION
-onMounted(() => {
-  if (typeof window !== 'undefined') {
-    const historyDays = document.querySelectorAll('.history-day');
-    
-    historyDays.forEach(day => {
-      day.addEventListener('mousemove', (e) => {
-        const tooltip = day.querySelector('.day-tooltip');
-        if (tooltip) {
-          tooltip.style.left = `${e.pageX}px`;
-          tooltip.style.top = `${e.pageY - 10}px`;
-        }
-      });
-    });
-  }
-});
 </script>
 
 <template>
@@ -138,17 +152,17 @@ onMounted(() => {
       <div class="status-overview-row">
         <div class="status-overview">
           <div class="metric-group">
-            <div class="metric-value">{{ services.filter(s => s.status === 'operational').length }}/{{ services.length }}</div>
+            <div class="metric-value">{{ operationalCount }}/{{ services.length }}</div>
             <div class="metric-label">Systems Operational</div>
           </div>
           
           <div class="metric-group">
-            <div class="metric-value">95%</div>
+            <div class="metric-value">{{ averageUptime }}%</div>
             <div class="metric-label">Average Uptime</div>
           </div>
         </div>
         
-        <!-- New alert box that spans columns 2-3 -->
+        <!-- Alert box that spans columns 2-3 -->
         <div class="status-alert" :class="{ 'active': alertStatus.active, [alertStatus.type]: true }">
           <div class="alert-content">
             <div v-if="alertStatus.active" class="alert-icon alert-warning">{{ getAlertIcon(alertStatus.type) }}</div>
@@ -165,7 +179,7 @@ onMounted(() => {
       </div>
 
       <div class="status-container">
-        <div v-for="service in services" :key="service.name" class="status-card">
+        <div v-for="(service, serviceIndex) in services" :key="service.name" class="status-card">
           <div class="status-header">
             <h3>{{ service.name }}</h3>
             <div 
@@ -193,22 +207,28 @@ onMounted(() => {
               </div>
             </div>
             
-            <!-- Fixed Last 7 days history section -->
+            <!-- Improved reactive Last 7 days history section -->
             <div class="uptime-history">
               <div class="history-label">Last 7 days:</div>
               <div class="history-bars">
                 <div 
-                  v-for="(value, index) in service.history" 
-                  :key="index" 
+                  v-for="(value, dayIndex) in service.history" 
+                  :key="dayIndex" 
                   class="history-day"
+                  @mousemove="handleTooltipMove"
+                  @mouseover="showTooltip(serviceIndex, dayIndex, $event)"
+                  @mouseout="hideTooltip"
                 >
                   <div 
                     class="history-bar" 
                     :style="{ height: value + '%' }"
                     :class="{ 'perfect': value === 100 }"
                   ></div>
-                  <div class="day-tooltip">
-                    <div>Day {{ index + 1 }}</div>
+                  <!-- Tooltip shown based on active state -->
+                  <div v-if="activeTooltip === `${serviceIndex}-${dayIndex}`" 
+                       class="day-tooltip"
+                       :style="{ left: `${tooltipPosition.x}px`, top: `${tooltipPosition.y}px` }">
+                    <div>Day {{ dayIndex + 1 }}</div>
                     <div><strong>{{ value }}%</strong> uptime</div>
                   </div>
                 </div>
@@ -335,7 +355,7 @@ onMounted(() => {
   color: var(--vp-c-text-2);
 }
 
-/* New alert box styling */
+/* Alert box styling */
 .status-alert {
   background-color: var(--vp-c-bg-soft);
   border-radius: 8px;
@@ -533,7 +553,7 @@ onMounted(() => {
   font-size: 0.95rem;
 }
 
-/* ===== COMPLETELY REDESIGNED HISTORY SECTION ===== */
+/* Redesigned history section */
 .uptime-history {
   margin-top: 1.5rem;
 }
@@ -558,6 +578,7 @@ onMounted(() => {
   height: 100%;
   display: flex;
   align-items: flex-end;
+  cursor: pointer;
 }
 
 .history-bar {
@@ -576,13 +597,10 @@ onMounted(() => {
   opacity: 0.8;
 }
 
-/* Fixed tooltip system that won't cause layout shifts */
+/* Reactive tooltip system */
 .day-tooltip {
-  position: fixed; /* Using fixed positioning to avoid layout issues */
-  bottom: auto;
-  left: auto;
-  transform: translate(-50%, -100%);
-  margin-top: -10px;
+  position: fixed;
+  z-index: 1000;
   background-color: #1e293b;
   color: white;
   padding: 0.5rem;
@@ -591,9 +609,7 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   width: max-content;
   max-width: 150px;
-  display: none;
   text-align: center;
-  z-index: 1000;
   pointer-events: none;
   border: 1px solid #374151;
 }
@@ -611,16 +627,7 @@ onMounted(() => {
   border-top: 5px solid #1e293b;
 }
 
-.history-day:hover .day-tooltip {
-  display: block;
-}
-
-/* Show tooltips at cursor position */
-.history-day:hover {
-  cursor: pointer;
-}
-
-/* ===== IMPROVED LEGEND STYLING ===== */
+/* Status legend styling */
 .status-legend {
   background-color: var(--vp-c-bg-soft);
   padding: 1.5rem;

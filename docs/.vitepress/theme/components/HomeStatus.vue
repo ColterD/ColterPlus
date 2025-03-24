@@ -1,6 +1,12 @@
 <!-- docs/.vitepress/theme/components/HomeStatus.vue -->
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useStorage } from '@vueuse/core'; // Already imported in the project
+
+// Use storage to cache data and last fetch time
+const cachedServices = useStorage('home-status-services', null);
+const lastFetchTime = useStorage('home-status-last-fetch', 0);
+const CACHE_TIMEOUT = 300000; // 5 minutes
 
 const services = ref([
   { 
@@ -72,13 +78,23 @@ function formatTimeSince(date) {
   return `${Math.floor(seconds)}s`;
 }
 
-function fetchStatus() {
+function fetchStatus(force = false) {
+  const now = Date.now();
+  const shouldFetch = force || !cachedServices.value || (now - lastFetchTime.value > CACHE_TIMEOUT);
+  
+  if (!shouldFetch) {
+    // Use cached data
+    services.value = JSON.parse(JSON.stringify(cachedServices.value));
+    loading.value = false;
+    return;
+  }
+  
   loading.value = true;
   
   setTimeout(() => {
     const oldServices = [...services.value];
     
-    services.value = services.value.map((service, index) => {
+    const updatedServices = services.value.map((service, index) => {
       // In a real implementation, this data would come from your API
       const randomStatus = Math.random() > 0.1 ? 'operational' : (Math.random() > 0.5 ? 'degraded' : 'down');
       const randomPing = Math.floor(5 + Math.random() * 25); // Random ping between 5-30ms
@@ -104,6 +120,9 @@ function fetchStatus() {
       };
     });
     
+    services.value = updatedServices;
+    cachedServices.value = JSON.parse(JSON.stringify(updatedServices));
+    lastFetchTime.value = now;
     loading.value = false;
   }, 1000);
 }
@@ -134,8 +153,7 @@ function getIconSvg(icon) {
 
 onMounted(() => {
   fetchStatus();
-  // Changed from 60000 to 300000 (5 minutes)
-  const intervalId = setInterval(fetchStatus, 300000);
+  const intervalId = setInterval(() => fetchStatus(true), CACHE_TIMEOUT);
   
   onUnmounted(() => {
     clearInterval(intervalId);

@@ -103,10 +103,13 @@ export default defineConfig({
         imports: ['vue', '@vueuse/core'],
         dts: true,
       }),
-      // OptimizeExclude plugin removed due to compatibility issues
     ],
     ssr: {
       noExternal: ['nprogress']
+    },
+    // Add this resolve configuration
+    resolve: {
+      extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
     }
   }
 });
