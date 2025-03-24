@@ -8,17 +8,18 @@ export default createContentLoader('guides/*.md', {
     
     // Sort by date (newest first) and then by title
     return guides.sort((a, b) => {
-      // If we have dates, sort by date first
-      if (a.frontmatter.date && b.frontmatter.date) {
-        const dateComparison = new Date(b.frontmatter.date).getTime() - new Date(a.frontmatter.date).getTime()
-        if (dateComparison !== 0) return dateComparison
-      }
+      // Improved date handling with proper fallback
+      const dateA = a.frontmatter.date ? new Date(a.frontmatter.date).getTime() : 0;
+      const dateB = b.frontmatter.date ? new Date(b.frontmatter.date).getTime() : 0;
       
-      // Fallback to title sort
+      const dateComparison = dateB - dateA;
+      if (dateComparison !== 0) return dateComparison;
+      
+      // Fallback to title sort with null checks
       return (a.frontmatter.title || '').localeCompare(b.frontmatter.title || '')
     }).map(guide => {
       // Extract date information
-      const date = new Date(guide.frontmatter.date || '')
+      const date = new Date(guide.frontmatter.date || '');
       
       return {
         ...guide,

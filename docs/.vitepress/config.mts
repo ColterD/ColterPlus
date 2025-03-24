@@ -5,6 +5,12 @@ import { execSync } from 'child_process';
 import unocssConfig from './unocss.config.js';
 import { securityHeaders } from './head';
 
+// Repository configuration
+const REPO_OWNER = 'colterd';
+const REPO_NAME = 'colterplus';
+const REPO_BRANCH = 'main';
+const REPO_URL = `https://github.com/${REPO_OWNER}/${REPO_NAME}`;
+
 const getGitRevision = () => {
   try {
     return execSync('git rev-parse --short HEAD').toString().trim();
@@ -51,7 +57,7 @@ export default defineConfig({
         ]
       },
       { text: 'Status', link: '/status' },
-      { text: 'Changelog', link: 'https://github.com/...' },
+      { text: 'Changelog', link: `${REPO_URL}/releases` },
     ],
     sidebar: {
       '/projects/': [
@@ -90,13 +96,13 @@ export default defineConfig({
       },
     },
     editLink: {
-      pattern: 'https://github.com/colterd/colterplus/edit/main/docs/:path',
+      pattern: `${REPO_URL}/edit/${REPO_BRANCH}/docs/:path`,
       text: '📝 Edit this page',
     },
     outline: 'deep',
     logo: '/logo.png',
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/colterd/colterplus' },
+      { icon: 'github', link: REPO_URL },
       { icon: 'discord', link: 'https://discord.gg/colterplus' },
     ],
     footer: footerConfig,

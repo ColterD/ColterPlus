@@ -7,14 +7,16 @@ import { useStorage } from '@vueuse/core';
  * @param {string} key - Storage key for caching
  * @param {Array} initialData - Initial service data
  * @param {number} cacheTimeout - Cache timeout in ms
+ * @param {number} pollInterval - Optional interval for automatic polling (0 = disabled)
  * @returns {Object} Status data and utilities
  */
-export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
+export function useStatusData(key, initialData = [], cacheTimeout = 300000, pollInterval = 0) {
   const cachedData = useStorage(`${key}-data`, null);
   const lastFetchTime = useStorage(`${key}-last-fetch`, 0);
   // Ensure we always have an array
   const data = ref(Array.isArray(cachedData.value) ? cachedData.value : JSON.parse(JSON.stringify(initialData)));
   const loading = ref(true);
+  let fetchIntervalId = null;
 
   /**
    * Generate mock data for development
@@ -47,11 +49,48 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
   }
 
   /**
+   * Fetch real status data from API endpoint
+   * @param {Array} services - Current services
+   * @returns {Promise<Array>} Updated service data
+   */
+  async function fetchRealStatusData(services) {
+    try {
+      // Replace with your actual API endpoint
+      const response = await fetch('/api/status');
+      
+      if (!response.ok) {
+        console.error('Failed to fetch status data:', response.statusText);
+        return services; // Return current services on error
+      }
+      
+      const apiData = await response.json();
+      
+      // Map API data to our service format
+      return services.map(service => {
+        const apiService = apiData.find(s => s.name === service.name);
+        
+        if (!apiService) return service;
+        
+        return {
+          ...service,
+          status: apiService.status || service.status,
+          ping: apiService.latency || service.ping,
+          pingText: apiService.latency ? `${apiService.latency}ms` : service.pingText,
+          lastOutage: apiService.lastOutage ? new Date(apiService.lastOutage) : service.lastOutage
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching status data:', error);
+      return services; // Return current services on error
+    }
+  }
+
+  /**
    * Fetch status data with caching
    * @param {boolean} force - Force refresh data
    * @returns {Promise} Promise resolving to updated data
    */
-  const fetchData = (force = false) => {
+  const fetchData = async (force = false) => {
     const now = Date.now();
     const shouldFetch = force || !cachedData.value || (now - lastFetchTime.value > cacheTimeout);
     
@@ -63,19 +102,26 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
     
     loading.value = true;
     
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Ensure data.value is an array before mapping
-        const currentData = Array.isArray(data.value) ? data.value : initialData;
-        const updatedData = generateMockData(currentData);
-        
-        data.value = updatedData;
-        cachedData.value = JSON.parse(JSON.stringify(updatedData));
-        lastFetchTime.value = now;
-        loading.value = false;
-        resolve(updatedData);
-      }, 1000);
-    });
+    try {
+      // Ensure data.value is an array before processing
+      const currentData = Array.isArray(data.value) ? data.value : initialData;
+      
+      // Use real data in production, mock data in development
+      const updatedData = import.meta.env.PROD && !import.meta.env.DEV_MOCKS
+        ? await fetchRealStatusData(currentData)
+        : generateMockData(currentData);
+      
+      data.value = updatedData;
+      cachedData.value = JSON.parse(JSON.stringify(updatedData));
+      lastFetchTime.value = now;
+      
+      return updatedData;
+    } catch (error) {
+      console.error('Error updating status data:', error);
+      return data.value;
+    } finally {
+      loading.value = false;
+    }
   };
 
   // Computed properties
@@ -118,17 +164,21 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
     return `${Math.floor(seconds)}s`;
   };
 
-  // Clean up any resources
-  let fetchInterval = null;
-  
   onMounted(() => {
     fetchData();
+    
+    // Set up polling if interval is specified
+    if (pollInterval > 0) {
+      fetchIntervalId = setInterval(() => {
+        fetchData();
+      }, pollInterval);
+    }
   });
   
   onUnmounted(() => {
-    if (fetchInterval) {
-      clearInterval(fetchInterval);
-      fetchInterval = null;
+    if (fetchIntervalId) {
+      clearInterval(fetchIntervalId);
+      fetchIntervalId = null;
     }
   });
 
