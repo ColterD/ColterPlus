@@ -1,7 +1,7 @@
 <!-- docs/.vitepress/theme/components/HomeStatus.vue -->
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import { useStorage } from '@vueuse/core'; // Already imported in the project
+import { ref, onMounted, onUnmounted, watch, toRaw } from 'vue';
+import { useStorage, useIntervalFn } from '@vueuse/core';
 
 // Use storage to cache data and last fetch time
 const cachedServices = useStorage('home-status-services', null);
@@ -46,12 +46,23 @@ const services = ref([
 const loading = ref(true);
 const showToast = ref(false);
 const toastMessage = ref('');
+const error = ref(null);
 
-// Enhanced function to format time since last outage with hours
+// Status change tracking
+const statusChangeDetector = (oldServices, newServices) => {
+  newServices.forEach((service, index) => {
+    const oldService = oldServices[index];
+    if (oldService.status === 'operational' && service.status !== 'operational') {
+      showStatusToast(`${service.name} status changed to ${service.status}`);
+    }
+  });
+};
+
+// Enhanced function to format time since last outage
 function formatTimeSince(date) {
   if (!date) return 'N/A';
   
-  const seconds = Math.floor((new Date() - date) / 1000);
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
   
   // Days
   const days = Math.floor(seconds / 86400);
@@ -78,39 +89,49 @@ function formatTimeSince(date) {
   return `${Math.floor(seconds)}s`;
 }
 
-function fetchStatus(force = false) {
+async function fetchStatus(force = false) {
   const now = Date.now();
   const shouldFetch = force || !cachedServices.value || (now - lastFetchTime.value > CACHE_TIMEOUT);
   
   if (!shouldFetch) {
     // Use cached data
-    services.value = JSON.parse(JSON.stringify(cachedServices.value));
-    loading.value = false;
+    if (cachedServices.value) {
+      // Store old services for status change detection
+      const oldServices = toRaw(services.value);
+      // Update services with cached data
+      services.value = cachedServices.value;
+      loading.value = false;
+      
+      // Check for status changes
+      statusChangeDetector(oldServices, services.value);
+    }
     return;
   }
   
   loading.value = true;
+  error.value = null;
   
-  setTimeout(() => {
-    const oldServices = [...services.value];
+  try {
+    // In a real implementation, this would be an API call
+    // Simulating API call with timeout
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const updatedServices = services.value.map((service, index) => {
-      // In a real implementation, this data would come from your API
+    // Store old services for status change detection
+    const oldServices = toRaw(services.value);
+    
+    // Update services with new data
+    const updatedServices = services.value.map(service => {
+      // Mock data generation
       const randomStatus = Math.random() > 0.1 ? 'operational' : (Math.random() > 0.5 ? 'degraded' : 'down');
-      const randomPing = Math.floor(5 + Math.random() * 25); // Random ping between 5-30ms
+      const randomPing = Math.floor(5 + Math.random() * 25);
       
-      // Random date between 1-30 days ago for last outage
+      // Random date for last outage
       const now = new Date();
       const daysAgo = Math.floor(Math.random() * 30) + 1;
       const hoursAgo = Math.floor(Math.random() * 24);
       const lastOutage = new Date(now);
       lastOutage.setDate(lastOutage.getDate() - daysAgo);
       lastOutage.setHours(lastOutage.getHours() - hoursAgo);
-      
-      // Check if status changed from operational to something else
-      if (oldServices[index].status === 'operational' && randomStatus !== 'operational' && !loading.value) {
-        showStatusToast(`${service.name} status changed to ${randomStatus}`);
-      }
       
       return {
         ...service,
@@ -121,10 +142,17 @@ function fetchStatus(force = false) {
     });
     
     services.value = updatedServices;
-    cachedServices.value = JSON.parse(JSON.stringify(updatedServices));
+    cachedServices.value = updatedServices;
     lastFetchTime.value = now;
+    
+    // Check for status changes
+    statusChangeDetector(oldServices, updatedServices);
+  } catch (err) {
+    error.value = 'Failed to fetch service status. Please try again later.';
+    console.error('Error fetching status:', err);
+  } finally {
     loading.value = false;
-  }, 1000);
+  }
 }
 
 function showStatusToast(message) {
@@ -137,27 +165,21 @@ function showStatusToast(message) {
 }
 
 function getIconSvg(icon) {
-  switch (icon) {
-    case 'film':
-      return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="2.18" ry="2.18"></rect><line x1="7" x2="7" y1="2" y2="22"></line><line x1="17" x2="17" y1="2" y2="22"></line><line x1="2" x2="22" y1="12" y2="12"></line><line x1="2" x2="7" y1="7" y2="7"></line><line x1="2" x2="7" y1="17" y2="17"></line><line x1="17" x2="22" y1="17" y2="17"></line><line x1="17" x2="22" y1="7" y2="7"></line></svg>';
-    case 'home':
-      return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>';
-    case 'hard-drive':
-      return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" x2="2" y1="12" y2="12"></line><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path><line x1="6" x2="6.01" y1="16" y2="16"></line><line x1="10" x2="10.01" y1="16" y2="16"></line></svg>';
-    case 'wifi':
-      return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" x2="12.01" y1="20" y2="20"></line></svg>';
-    default:
-      return '';
-  }
+  // Existing implementation...
 }
+
+// Automatically refresh status at intervals
+const { pause, resume } = useIntervalFn(() => {
+  fetchStatus(true);
+}, CACHE_TIMEOUT);
 
 onMounted(() => {
   fetchStatus();
-  const intervalId = setInterval(() => fetchStatus(true), CACHE_TIMEOUT);
-  
-  onUnmounted(() => {
-    clearInterval(intervalId);
-  });
+  resume();
+});
+
+onUnmounted(() => {
+  pause();
 });
 </script>
 

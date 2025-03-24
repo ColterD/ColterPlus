@@ -1,52 +1,62 @@
 // docs/blog/posts.data.ts
-import { createContentLoader } from 'vitepress'
-import type { ContentData } from 'vitepress'
+import { createSharedContentLoader, BlogPostFrontmatter, DateMeta } from '../.vitepress/utils/contentLoader'
+import { ContentData } from 'vitepress'
 
-// Define interface for the post frontmatter
-interface PostFrontmatter {
-  title: string
-  description: string
-  date: string
-  tags: string[]
-  author: string
+export interface Post extends ContentData {
+  date: DateMeta
+  readingTime: number
+  category?: string
 }
 
-// Define a type for a single post
-interface Post extends ContentData {
-  frontmatter: PostFrontmatter
-  excerpt: string | undefined
-  date: {
-    raw: string
-    year: number
-    month: number
-  }
+// Generate reading time estimate based on content length
+function calculateReadingTime(text: string): number {
+  const wordsPerMinute = 200
+  const words = text.split(/\s+/).length
+  return Math.max(1, Math.ceil(words / wordsPerMinute))
 }
 
-// The main output type needs to be the overall result
-export default createContentLoader('blog/*.md', {
+// Default export for VitePress
+export default createSharedContentLoader<BlogPostFrontmatter>('blog/*.md', {
   excerpt: true,
-  transform(rawData) {
-    // Sort by date
-    const posts = rawData
-      .sort((a, b) => {
-        return new Date(b.frontmatter.date).getTime() - new Date(a.frontmatter.date).getTime()
-      })
-      .map((page) => {
-        // Extract year and month from date
-        const date = new Date(page.frontmatter.date)
-        const year = date.getFullYear()
-        const month = date.getMonth() + 1
+  transformer(data) {
+    return data.map((post) => {
+      // Calculate reading time
+      const content = post.excerpt || ''
+      const readingTime = calculateReadingTime(content)
+      
+      // Extract category from first tag if available
+      const category = post.frontmatter.tags && post.frontmatter.tags.length > 0 
+        ? post.frontmatter.tags[0] 
+        : undefined
+        
+      return {
+        ...post,
+        readingTime,
+        category
+      }
+    })
+  }
+})
 
-        return {
-          ...page,
-          date: {
-            raw: page.frontmatter.date,
-            year,
-            month
-          }
-        }
-      })
-    
-    return posts
+// Named export for importing in components
+export const data = createSharedContentLoader<BlogPostFrontmatter>('blog/*.md', {
+  excerpt: true,
+  transformer(data) {
+    return data.map((post) => {
+      // Calculate reading time
+      const content = post.excerpt || ''
+      const readingTime = calculateReadingTime(content)
+      
+      // Extract category from first tag if available
+      const category = post.frontmatter.tags && post.frontmatter.tags.length > 0 
+        ? post.frontmatter.tags[0] 
+        : undefined
+        
+      return {
+        ...post,
+        readingTime,
+        category
+      }
+    })
   }
 })
