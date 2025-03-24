@@ -4,6 +4,7 @@ import type { Theme } from 'vitepress';
 import DefaultTheme from 'vitepress/theme';
 import HomeStatus from './components/HomeStatus.vue';
 import FeatureCard from './components/FeatureCard.vue';
+import StatusPage from './components/StatusPage.vue'; // Add this line
 import './style.css';
 import './custom.css';
 
@@ -18,7 +19,6 @@ export default {
     // Register components globally
     app.component('HomeStatus', HomeStatus);
     app.component('FeatureCard', FeatureCard);
-    
-    // No router hooks - VitePress doesn't support them in the same way as Vue Router
+    app.component('StatusPage', StatusPage); // Add this line
   }
 } satisfies Theme;
