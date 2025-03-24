@@ -2,7 +2,8 @@ import UnoCSS from 'unocss/vite';
 import AutoImport from 'unplugin-auto-import/vite';
 import { defineConfig } from 'vitepress';
 import { execSync } from 'child_process';
-import unocssConfig from './unocss.config';
+import unocssConfig from './unocss.config.js';
+import { securityHeaders } from './head';
 
 const getGitRevision = () => {
   try {
@@ -27,7 +28,11 @@ export default defineConfig({
   titleTemplate: ':title • Colter+',
   appearance: 'force-dark',
   srcDir: './content', // Updated to point to the new content directory
-  head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
+  head: [
+    ['link', { rel: 'icon', href: '/favicon.ico' }],
+    // Add security headers
+    ...securityHeaders
+  ],
   lastUpdated: true,
   cleanUrls: true,
   ignoreDeadLinks: 'localhostLinks',
@@ -117,14 +122,6 @@ export default defineConfig({
         compress: {
           drop_console: true,
         },
-      },
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            vue: ['vue'],
-            vueuse: ['@vueuse/core'],
-          }
-        }
       }
     }
   }

@@ -8,8 +8,6 @@ import StatusPage from './components/StatusPage.vue';
 import OptimizedImage from './components/OptimizedImage.vue';
 import './styles/variables.css';
 import './styles/components.css';
-import './style.css';
-import './custom.css';
 
 export default {
   extends: DefaultTheme,

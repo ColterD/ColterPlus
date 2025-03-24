@@ -25,6 +25,13 @@
     --content-width-narrow: 800px;
     --content-width-medium: 1024px;
     --content-width-wide: 1200px;
+  
+    /* Base styles */
+    --primary-color: #3b82f6;
+    --secondary-color: #10b981;
+    --text-color: #1f2937;
+    --background-color: #ffffff;
+    --border-color: #e5e7eb;
   }
   
   .dark {
@@ -33,4 +40,8 @@
     --status-degraded: #F59E0B;
     --status-down: #EF4444;
     --status-loading: #6B7280;
+    
+    --text-color: #f3f4f6;
+    --background-color: #111827;
+    --border-color: #374151;
   }

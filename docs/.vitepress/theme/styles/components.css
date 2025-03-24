@@ -119,3 +119,17 @@
     background-color: rgba(59, 130, 246, 0.15);
     color: #3B82F6;
   }
+  
+  /* Custom styles */
+  a {
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
+  p {
+    line-height: 1.6;
+  }
