@@ -16,15 +16,13 @@ const {
   data: services, 
   loading, 
   fetchData,
-  formatTimeSince,
-  startAutoUpdate,
-  stopAutoUpdate 
+  formatTimeSince
 } = useStatusData('services-status', initialServices);
 
 const { getIconSvg, getStatusText, getStatusColor } = useUIComponents();
 
 onMounted(() => {
-  startAutoUpdate(30000); // Update every 30 seconds
+  fetchData();
 });
 </script>
 
@@ -37,7 +35,7 @@ onMounted(() => {
         Loading service status...
       </div>
       <div v-else class="status-header">
-        <p>All systems are being monitored. Refresh interval: 30 seconds.</p>
+        <p>All systems are being monitored.</p>
         <button @click="fetchData(true)" class="refresh-button">
           Refresh Now
         </button>
@@ -62,7 +60,7 @@ onMounted(() => {
         <div class="service-details">
           <div class="detail-item">
             <div class="detail-label">Latency</div>
-            <div class="detail-value">{{ service.ping || '—' }} ms</div>
+            <div class="detail-value">{{ service.pingText || service.ping + 'ms' || '—' }}</div>
           </div>
           
           <div class="detail-item">
@@ -80,7 +78,7 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped>
+<style>
 .status-page {
   max-width: 1200px;
   margin: 0 auto;

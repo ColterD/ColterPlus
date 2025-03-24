@@ -27,10 +27,9 @@ export default defineConfig({
   description: 'My Digital Universe - Curated',
   titleTemplate: ':title • Colter+',
   appearance: 'force-dark',
-  srcDir: './content', // Updated to point to the new content directory
+  srcDir: './content',
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }],
-    // Add security headers
     ...securityHeaders
   ],
   lastUpdated: true,
@@ -59,21 +58,21 @@ export default defineConfig({
         {
           text: 'Projects',
           link: '/projects/',
-          items: []  // Will be populated as you create projects
+          items: []
         }
       ],
       '/blog/': [
         {
           text: 'Blog',
           link: '/blog/',
-          items: []  // You can populate this if you want categories
+          items: []
         }
       ],
       '/guides/': [
         {
           text: 'Guides',
           link: '/guides/',
-          items: []  // Populate with your guide categories
+          items: []
         }
       ]
     },

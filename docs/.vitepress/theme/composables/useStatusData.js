@@ -4,7 +4,8 @@ import { useStorage } from '@vueuse/core';
 export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
   const cachedData = useStorage(`${key}-data`, null);
   const lastFetchTime = useStorage(`${key}-last-fetch`, 0);
-  const data = ref(cachedData.value || JSON.parse(JSON.stringify(initialData)));
+  // Ensure we always have an array
+  const data = ref(Array.isArray(cachedData.value) ? cachedData.value : JSON.parse(JSON.stringify(initialData)));
   const loading = ref(true);
 
   // For demo purposes - will be replaced with actual API call in production
@@ -13,7 +14,7 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
     const shouldFetch = force || !cachedData.value || (now - lastFetchTime.value > cacheTimeout);
     
     if (!shouldFetch) {
-      data.value = JSON.parse(JSON.stringify(cachedData.value));
+      data.value = Array.isArray(cachedData.value) ? cachedData.value : JSON.parse(JSON.stringify(initialData));
       loading.value = false;
       return;
     }
@@ -22,7 +23,10 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
     
     return new Promise((resolve) => {
       setTimeout(() => {
-        const updatedData = data.value.map(service => {
+        // Ensure data.value is an array before mapping
+        const currentData = Array.isArray(data.value) ? data.value : initialData;
+        
+        const updatedData = currentData.map(service => {
           const randomStatus = Math.random() > 0.1 ? 'operational' : (Math.random() > 0.5 ? 'degraded' : 'down');
           const randomPing = Math.floor(5 + Math.random() * 25);
           
@@ -37,6 +41,7 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
             ...service,
             status: randomStatus,
             ping: randomPing,
+            pingText: `${randomPing}ms`,
             lastOutage: lastOutage
           };
         });
@@ -55,24 +60,6 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
     data.value.filter(s => s.status === 'operational').length
   );
   
-  const servicesByStatus = computed(() => {
-    const result = {
-      operational: [],
-      degraded: [],
-      down: [],
-      loading: []
-    };
-    
-    data.value.forEach(service => {
-      if (result[service.status]) {
-        result[service.status].push(service);
-      }
-    });
-    
-    return result;
-  });
-
-  // Helper functions
   const formatTimeSince = (date) => {
     if (!date) return 'N/A';
     
@@ -103,28 +90,9 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
     return `${Math.floor(seconds)}s`;
   };
 
-  // Auto-update functionality
-  let intervalId = null;
-  
-  const startAutoUpdate = (intervalTime = cacheTimeout) => {
-    if (intervalId) clearInterval(intervalId);
-    fetchData();
-    intervalId = setInterval(() => fetchData(true), intervalTime);
-  };
-  
-  const stopAutoUpdate = () => {
-    if (intervalId) {
-      clearInterval(intervalId);
-      intervalId = null;
-    }
-  };
-
+  // No auto-updates to prevent infinite repeating boxes
   onMounted(() => {
     fetchData();
-  });
-  
-  onUnmounted(() => {
-    if (intervalId) clearInterval(intervalId);
   });
 
   return {
@@ -132,9 +100,6 @@ export function useStatusData(key, initialData = [], cacheTimeout = 300000) {
     loading,
     fetchData,
     operationalCount,
-    servicesByStatus,
-    formatTimeSince,
-    startAutoUpdate,
-    stopAutoUpdate
+    formatTimeSince
   };
 }

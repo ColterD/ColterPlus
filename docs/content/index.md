@@ -6,6 +6,9 @@ hero:
   name: Colter+
   text: My Digital Universe
   tagline: A collection of projects, thoughts, and guides
+  image:
+    src: /hero-logo.png
+    alt: C+ Icon
   actions:
     - theme: brand
       text: View Projects
@@ -28,9 +31,8 @@ features:
     link: /guides/
 ---
 
-<!-- Remove or update this import path -->
-<!-- <script setup>
-import HomeStatus from './.vitepress/theme/components/HomeStatus.vue'
+<script setup>
+import HomeStatus from '../.vitepress/theme/components/HomeStatus.vue'
 </script>
 
-<HomeStatus /> -->
+<HomeStatus />
