@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 
 const props = defineProps({
@@ -33,17 +33,26 @@ const props = defineProps({
   blurHash: {
     type: String,
     default: ''
+  },
+  priority: {
+    type: Boolean,
+    default: false
   }
 });
 
 const imageLoaded = ref(false);
 const imageError = ref(false);
-const imageRef = ref(null);
-let observer = null;
+const imageRef = ref<HTMLImageElement | null>(null);
+let observer: IntersectionObserver | null = null;
 
 // Automatically generate srcset for responsive images
 const srcset = computed(() => {
-  if (!props.src) return '';
+  if (!props.src) return { standard: '', webp: '', avif: '' };
+  
+  if (props.src.startsWith('http')) {
+    // For external images, don't generate srcset
+    return { standard: '', webp: '', avif: '' };
+  }
   
   const basePath = props.src.substring(0, props.src.lastIndexOf('.'));
   const extension = props.src.substring(props.src.lastIndexOf('.'));
@@ -61,9 +70,15 @@ const srcset = computed(() => {
     .map(w => `${basePath}-${w}w.webp ${w}w`)
     .join(', ');
   
+  // Support for AVIF format
+  const avifSrcSet = widths
+    .map(w => `${basePath}-${w}w.avif ${w}w`)
+    .join(', ');
+  
   return {
     standard: standardSrcSet,
-    webp: webpSrcSet
+    webp: webpSrcSet,
+    avif: avifSrcSet
   };
 });
 
@@ -72,14 +87,36 @@ const handleLoad = () => {
 };
 
 const handleError = () => {
+  console.error(`Failed to load image: ${props.src}`);
   imageError.value = true;
   if (props.fallbackSrc && imageRef.value) {
     imageRef.value.src = props.fallbackSrc;
   }
 };
 
+// Actively check if image exists and preload if it's a priority image
+const preloadPriorityImage = async () => {
+  if (props.priority && typeof window !== 'undefined') {
+    try {
+      // Create a new image to test loading
+      const img = new Image();
+      img.src = props.src;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+      // If we get here, image loaded successfully
+      imageLoaded.value = true;
+    } catch (error) {
+      // Handle error silently - will be caught by the main image error handler
+    }
+  }
+};
+
 onMounted(() => {
-  if (props.lazy && 'IntersectionObserver' in window) {
+  preloadPriorityImage();
+  
+  if (props.lazy && !props.priority && 'IntersectionObserver' in window) {
     observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting && imageRef.value) {
@@ -120,11 +157,20 @@ onUnmounted(() => {
 <template>
   <div class="optimized-image" :class="{ 'loaded': imageLoaded, 'error': imageError }">
     <picture>
-      <!-- WebP Support -->
+      <!-- AVIF Support - Best compression, modern browsers -->
+      <source 
+        v-if="srcset.avif" 
+        :data-srcset="lazy && !priority ? srcset.avif : undefined" 
+        :srcset="(!lazy || priority) ? srcset.avif : undefined" 
+        type="image/avif" 
+        :sizes="sizes"
+      />
+      
+      <!-- WebP Support - Good compression, wide support -->
       <source 
         v-if="srcset.webp" 
-        :data-srcset="lazy ? srcset.webp : undefined" 
-        :srcset="!lazy ? srcset.webp : undefined" 
+        :data-srcset="lazy && !priority ? srcset.webp : undefined" 
+        :srcset="(!lazy || priority) ? srcset.webp : undefined" 
         type="image/webp" 
         :sizes="sizes"
       />
@@ -132,18 +178,19 @@ onUnmounted(() => {
       <!-- Standard format with srcset -->
       <img
         ref="imageRef"
-        :src="lazy ? '' : src"
-        :data-src="lazy ? src : ''"
-        :srcset="!lazy ? srcset.standard : undefined"
-        :data-srcset="lazy ? srcset.standard : undefined"
+        :src="(lazy && !priority) ? '' : src"
+        :data-src="(lazy && !priority) ? src : ''"
+        :srcset="(!lazy || priority) ? srcset.standard : undefined"
+        :data-srcset="(lazy && !priority) ? srcset.standard : undefined"
         :sizes="sizes"
         :alt="alt"
         :width="width"
         :height="height"
         @load="handleLoad"
         @error="handleError"
-        :loading="lazy ? 'lazy' : 'eager'"
+        :loading="(lazy && !priority) ? 'lazy' : 'eager'"
         decoding="async"
+        :fetchpriority="priority ? 'high' : 'auto'"
       />
     </picture>
     
@@ -152,6 +199,7 @@ onUnmounted(() => {
       v-if="!imageLoaded && !imageError" 
       class="image-placeholder"
       :style="blurHash ? { backgroundImage: `url(${blurHash})` } : {}"
+      :aria-hidden="true"
     ></div>
   </div>
 </template>

@@ -16,13 +16,18 @@ export interface ServiceStatus {
 export function useStatusData(
   key: string, 
   initialData: ServiceStatus[] = [], 
-  cacheTimeout = 300000, 
+  cacheTimeout = 300000, // 5 minutes
   pollInterval = 0
 ) {
   const cachedData = useStorage<ServiceStatus[] | null>(`${key}-data`, null);
   const lastFetchTime = useStorage<number>(`${key}-last-fetch`, 0);
-  const data = ref<ServiceStatus[]>(Array.isArray(cachedData.value) ? cachedData.value : JSON.parse(JSON.stringify(initialData)));
+  const staleData = ref<ServiceStatus[]>(Array.isArray(cachedData.value) 
+    ? cachedData.value 
+    : JSON.parse(JSON.stringify(initialData)));
+  
+  const data = ref<ServiceStatus[]>(staleData.value);
   const loading = ref(true);
+  const error = ref<Error | null>(null);
   let fetchIntervalId: number | null = null;
 
   function generateMockData(services: ServiceStatus[]): ServiceStatus[] {
@@ -50,11 +55,21 @@ export function useStatusData(
 
   async function fetchRealStatusData(services: ServiceStatus[]): Promise<ServiceStatus[]> {
     try {
-      const response = await fetch('/api/status');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      const response = await fetch('/api/status', {
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
-        console.error('Failed to fetch status data:', response.statusText);
-        return services;
+        throw new Error(`Failed to fetch status data: ${response.statusText}`);
       }
       
       const apiData = await response.json();
@@ -73,24 +88,38 @@ export function useStatusData(
       });
     } catch (error) {
       console.error('Error fetching status data:', error);
-      return services;
+      // Re-throw to handle in the caller
+      throw error;
     }
   }
 
+  // Implements stale-while-revalidate pattern
   const fetchData = async (force = false): Promise<ServiceStatus[]> => {
     const now = Date.now();
     const shouldFetch = force || !cachedData.value || (now - lastFetchTime.value > cacheTimeout);
     
-    if (!shouldFetch) {
-      data.value = Array.isArray(cachedData.value) ? cachedData.value : JSON.parse(JSON.stringify(initialData));
-      loading.value = false;
-      return Promise.resolve(data.value);
+    // If we have stale data, use it immediately
+    if (cachedData.value && !force) {
+      data.value = JSON.parse(JSON.stringify(cachedData.value));
+      // If we don't need fresh data, we can stop here
+      if (!shouldFetch) {
+        loading.value = false;
+        return data.value;
+      }
+    } else if (!force) {
+      // No cached data, use initial data
+      data.value = JSON.parse(JSON.stringify(initialData));
     }
     
-    loading.value = true;
+    // Set loading only if we don't have any data at all
+    if (!data.value.length) {
+      loading.value = true;
+    }
     
     try {
-      const currentData = Array.isArray(data.value) ? data.value : initialData;
+      const currentData = Array.isArray(data.value) && data.value.length 
+        ? data.value 
+        : initialData;
       
       const updatedData = import.meta.env.PROD && !import.meta.env.DEV_MOCKS
         ? await fetchRealStatusData(currentData)
@@ -99,10 +128,12 @@ export function useStatusData(
       data.value = updatedData;
       cachedData.value = JSON.parse(JSON.stringify(updatedData));
       lastFetchTime.value = now;
+      error.value = null;
       
       return updatedData;
-    } catch (error) {
-      console.error('Error updating status data:', error);
+    } catch (err) {
+      error.value = err instanceof Error ? err : new Error(String(err));
+      // Still return the current data even on error
       return data.value;
     } finally {
       loading.value = false;
@@ -111,6 +142,14 @@ export function useStatusData(
 
   const operationalCount = computed(() => 
     data.value.filter(s => s.status === 'operational').length
+  );
+  
+  const isAllOperational = computed(() =>
+    operationalCount.value === data.value.length
+  );
+  
+  const errorMessage = computed(() => 
+    error.value ? error.value.message : null
   );
   
   onMounted(() => {
@@ -133,8 +172,10 @@ export function useStatusData(
   return {
     data,
     loading,
+    error: errorMessage,
     fetchData,
     operationalCount,
+    isAllOperational,
     formatTimeSince
   };
 }
